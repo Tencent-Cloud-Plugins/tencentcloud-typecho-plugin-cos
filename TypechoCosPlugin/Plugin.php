@@ -36,11 +36,11 @@ if (!defined('pluginName')) {
 
 /**
  *  由苏苏开发，提供给Typecho用户使用的插件。<br>实现网站静态资源存储到腾讯云COS，有效降低本地存储负载，提升用户体验。
- *
+ *  lxyxinyuli增加删除文件逻辑，去掉备份相关按钮，原插件地址https://github.com/cnhongv/typecho-cos-plugin
  * @package 腾讯云对象存储（COS）插件
  * @author susu,lxyxinyuli
  * @version 1.0.2
- * @link https://github.com/cnhongv/TypechoCosPlugin
+ * @link https://github.com/Tencent-Cloud-Plugins/tencentcloud-typecho-plugin-cos
  * @dependence 1.1.2-*
  * @date 2022-10-24
  */
@@ -105,7 +105,7 @@ class Plugin implements PluginInterface
             $notice = '<li style="color:red; font-weight:800;">本插件要求php版本号>=5.6，否则可能无法正常运行！！！<br></li>';
             echo $notice;
           } ?>
-          <li>插件基于腾讯云cos-php-sdk-v5开发，若发现插件不可用，请到 <a target="_blank" href="https://github.com/cnhongv/TypechoCosPlugin">GitHub发布地址</a> 检查是否有更新，或者提交Issues<br></li>
+          <li>插件基于腾讯云cos-php-sdk-v5开发，若发现插件不可用，请到 <a target="_blank" href="https://github.com/Tencent-Cloud-Plugins/tencentcloud-typecho-plugin-cos">GitHub发布地址</a> 检查是否有更新，或者提交Issues<br></li>
           <li>插件会验证配置的正确性，如填写错误会报错<br></li>
           <li>插件会自动替换之前文件的链接，若启用插件前已上传文件，为保证正常显示，请自行将其上传至COS相同路径<br></li>
           <li>禁用插件会恢复为本地路径，为保证正常显示，请自行将数据从COS下载至相同路径<br></li>
