@@ -517,11 +517,8 @@ class Plugin implements PluginInterface
    */
   public static function CosInit($options = '')
   {
-    try {
-      if (!$options) {
+    if (!$options) {
         $options = Options::alloc()->plugin(pluginName);
-      }
-    } catch (Exception $e) {
     }
     if (self::compareVersion('7.2.5') < 0) {
       require_once 'phar://' . __DIR__ . '/phar/cos-sdk-v5-6.phar/vendor/autoload.php';;
