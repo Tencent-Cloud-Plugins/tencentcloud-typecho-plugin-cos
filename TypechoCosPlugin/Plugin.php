@@ -533,7 +533,7 @@ class Plugin implements PluginInterface
         'secretId' => $options->secid,
         'secretKey' => $options->sekey
       ),
-      'userAgent' => 'typecho;'
+      'userAgent' => 'typecho/1.2.0;tencentcloud-typecho-plugin-cos/1.0.2;cos-php-sdk-v5/2.0.8'
     ));
   }
 
