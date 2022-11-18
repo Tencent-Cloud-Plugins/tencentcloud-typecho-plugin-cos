@@ -8,7 +8,7 @@
 
 ## 1.插件介绍
 
-> Typecho COS插件是由lxyxinyuli基于苏苏开发的[TypechoCosPlugin](https://github.com/cnhongv/typecho-cos-plugin)进行二次开发，提供给Typecho用户使用的插件。实现网站静态资源存储到腾讯云COS，有效降低本地存储负载，提升用户体验。二次开发中同步增加删除文件逻辑，去掉原插件备份功能按钮，更改请求头user_agent值。
+> Typecho COS插件是提供给Typecho用户使用的插件。实现网站静态资源存储到腾讯云COS，有效降低本地存储负载，提升用户体验。
 
 | 标题       | 名称                                                         |
 | ---------- | ------------------------------------------------------------ |
@@ -80,13 +80,11 @@
 
 ### 2022.10.24 TypechoCosPlugin v1.0.2
 
-- 更改susu开发插件[TypechoCosPlugin](https://github.com/cnhongv/typecho-cos-plugin)，支持本地删除同步删除COS文件、删除时同步删除本地备份
 - 去除备份相关按钮
 - 更改请求头user_agent值
 
 ## 8.致谢
 
-- 该插件使用了腾讯云COS官方SDK [COS-PHP-SDK-V5](https://github.com/tencentyun/cos-php-sdk-v5)
-- 该插件基于Typecho 插件 [TypechoCosPlugin](https://github.com/cnhongv/typecho-cos-plugin)二次开发，特此对开发者susu进行致谢。
+- 该插件使用了腾讯云COS官方SDK [COS-PHP-SDK-V5](https://github.com/tencentyun/cos-php-sdk-v5)。
 
 本项目由个人建设和维护，如有问题可以在Issues提交。
