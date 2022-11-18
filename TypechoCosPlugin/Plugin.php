@@ -35,10 +35,8 @@ if (!defined('pluginName')) {
 }
 
 /**
- *  由苏苏开发，提供给Typecho用户使用的插件。<br>实现网站静态资源存储到腾讯云COS，有效降低本地存储负载，提升用户体验。
- *  lxyxinyuli增加删除文件逻辑，去掉备份相关按钮，原插件地址https://github.com/cnhongv/typecho-cos-plugin
  * @package 腾讯云对象存储（COS）插件
- * @author susu,lxyxinyuli
+ * @author 腾讯云对象存储（COS）
  * @version 1.0.2
  * @link https://github.com/Tencent-Cloud-Plugins/tencentcloud-typecho-plugin-cos
  * @dependence 1.1.2-*
