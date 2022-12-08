@@ -35,6 +35,7 @@ if (!defined('pluginName')) {
 }
 
 /**
+ * 实现网站静态资源存储到腾讯云COS，有效降低本地存储负载，提升用户体验。
  * @package 腾讯云对象存储（COS）插件
  * @author 腾讯云对象存储（COS）
  * @version 1.0.2
