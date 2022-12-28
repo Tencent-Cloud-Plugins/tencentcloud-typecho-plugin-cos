@@ -77,6 +77,9 @@
 > 4. 是否有开启防盗链功能；
 
 ## 7.版本迭代记录
+### 2022.12.28 TypechoCosPlugin v1.0.2
+
+- 更改Plugin.php,增加自定义域名的cosClient，实现高级设置中的自定义域名访问
 
 ### 2022.10.24 TypechoCosPlugin v1.0.2
 
