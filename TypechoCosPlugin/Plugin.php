@@ -447,7 +447,6 @@ class Plugin implements PluginInterface
      */
     public static function configHandle($config, $is_init)
     {
-        throw new \Typecho\Plugin\Exception('1111111111111');
         if (!$is_init) {
             try {
                 $opt = (object)$config;
