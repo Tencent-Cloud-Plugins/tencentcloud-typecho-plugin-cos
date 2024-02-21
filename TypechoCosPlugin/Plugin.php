@@ -42,7 +42,7 @@ if (!defined('pluginName')) {
  * 实现网站静态资源存储到腾讯云COS，有效降低本地存储负载，提升用户体验。
  * @package 腾讯云对象存储（COS）插件
  * @author 腾讯云对象存储（COS）
- * @version 1.0.3
+ * @version 1.0.4
  * @link https://github.com/Tencent-Cloud-Plugins/tencentcloud-typecho-plugin-cos
  * @dependence 1.1.2-*
  * @date 2022-10-24
@@ -336,7 +336,7 @@ class Plugin implements PluginInterface
             $slimClass = $slimError ? ' image_slim_hidden' : $slimError;
             $slimErrorHtml = $slimError ? ('<span style="color:red;font-weight:800">' . $slimError . '</span><br/>') : '';
             $slimTipsHtml = $slimErrorHtml . '<span>
-                    <span>数据万象-图片极智压缩支持图片访问时无需参数自动压缩或通过处理参数<span style="color:orange"> imageSlim </span>主动压缩，支持JPG、PNG两种格式，压缩后不会改变图片格式。</span><br/>
+                    <span>数据万象-图片极智压缩支持图片访问时无需参数自动压缩或通过处理参数<span style="color:orange"> imageSlim </span>主动压缩，支持JPG、PNG、GIF格式，压缩后不会改变图片格式。</span><br/>
                     <span>API使用示例： https://test-1250000000.cos.ap-beijing.myqcloud.com/sample.jpg<span style="color:orange">?imageSlim</span></span><br/>
                     <span><span>有关极智压缩的更多操作及计费信息，请查看</span> <a href="https://cloud.tencent.com/document/product/436/49259" target="_blank"> 图片极智压缩概述 </a></span>
                 </span>';
@@ -374,6 +374,7 @@ class Plugin implements PluginInterface
                 array(
                     'jpg' => _t('JPG/JPEG'),
                     'png' => _t('PNG'),
+                    'gif' => _t('GIF'),
                 ),
                 $slimSuffixArr,
                 _t('图片格式'),
