@@ -302,6 +302,14 @@ class Plugin implements PluginInterface
             );
             $domain->setAttribute('class', 'joe_content joe_advanced');
 
+            $cdn_domain = new Text(
+                'cdn_domain',
+                NULL,
+                '',
+                _t('访问域名，CDN域名，减少COS费用开支')
+            );
+            $cdn_domain->setAttribute('class', 'joe_content joe_advanced');
+
             $sign = new Select('sign', array(
                 'open' => _t('开启(建议)'),
                 'close' => _t('关闭'),
@@ -332,12 +340,11 @@ class Plugin implements PluginInterface
             $form->addInput($bucket);
             $form->addInput($path);
             $form->addInput($domain);
+            $form->addInput($cdn_domain);
             $form->addInput($sign);
             $form->addInput($remote_sync);
             $form->addInput($local);
             $form->addInput($local_sync);
-
-
 
             /** 极智压缩配置项 */
             $slimResult = self::getImageSlim();
@@ -668,6 +675,12 @@ class Plugin implements PluginInterface
             $url = $cosClient->getObjectUrl($opt->bucket, $content['attachment']->path, '+60 minutes');
             return $url;
         }
+
+        if (!empty($opt->cdn_domain)) {
+            $url =  $opt->cdn_domain . $content['attachment']->path;
+            return $url;
+        }
+
         $url = $cosClient->getObjectUrlWithoutSign($opt->bucket, $content['attachment']->path);
         return $url;
     }
