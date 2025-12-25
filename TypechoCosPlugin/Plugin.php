@@ -17,13 +17,10 @@
 namespace TypechoPlugin\TypechoCosPlugin;
 
 use Typecho\Plugin\PluginInterface;
-use Typecho\Db;
 use Typecho\Widget\Helper\Form;
 use Typecho\Widget\Helper\Form\Element\Text;
 use Typecho\Widget\Helper\Form\Element\Hidden;
-use Typecho\Widget\Helper\Form\Element\Password;
 use Typecho\Widget\Helper\Form\Element\Select;
-use Typecho\Widget\Helper\Form\Element\Radio;
 use Typecho\Widget\Helper\Form\Element\Checkbox;
 use Widget\Options;
 use Utils\Helper;
@@ -84,44 +81,49 @@ class Plugin implements PluginInterface
      */
     public static function getImageSlim()
     {
-        $opt = Options::alloc()->plugin(pluginName);
-        $cosClient = self::CosInit($opt);
-
-        $bucket = $opt->bucket;
-        $region = $opt->region;
-
-        if (!$bucket) return '未设置存储桶';
-        if (!$region) return '未设置地域';
-
         try {
-            $headResult = $cosClient->headBucket(array(
-                'Bucket' => $bucket,
-            ));
-        } catch (\Exception $e) {
-            if ($e->getExceptionCode() === 'NoSuchBucket') {
-                return '存储桶不存在，请检查存储桶和地域配置';
-            } else {
-                return '调用 HeadBucket 存储桶失败';
-            }
-        }
+            $opt = Options::alloc()->plugin(pluginName);
 
-        if (isset($headResult['BucketArch'])) {
-            return "存储桶 $bucket 是 OFS 桶，暂不支持图片极智压缩";
-        }
+            $cosClient = self::CosInit($opt);
 
-        try {
-            $slimResult = $cosClient->getImageSlim(array(
-                'Bucket' => $bucket,
-            ));
-            return $slimResult;
-        } catch (\Exception $e) {
-            if ($e->getExceptionCode() === 'UpsAppNotExist') {
-                return "存储桶 $bucket 未绑定数据万象，若要开启极智压缩，请先 <a href=\"https://console.cloud.tencent.com/ci/bucket\" target=\"_blank\">绑定数据万象服务</a>";
-            } else if ($e->getExceptionCode() === 'RegionUnsupport') {
-                return "存储桶所在地域 $region 暂不支持图片极智压缩";
-            } else {
-                return "存储桶极智压缩配置获取失败";
+            $bucket = $opt->bucket;
+            $region = $opt->region;
+
+            if (!$bucket) return '未设置存储桶';
+            if (!$region) return '未设置地域';
+
+            try {
+                $headResult = $cosClient->headBucket(array(
+                    'Bucket' => $bucket,
+                ));
+            } catch (\Exception $e) {
+                if ($e->getExceptionCode() === 'NoSuchBucket') {
+                    return '存储桶不存在，请检查存储桶和地域配置';
+                } else {
+                    return '调用 HeadBucket 存储桶失败';
+                }
             }
+
+            if (isset($headResult['BucketArch'])) {
+                return "存储桶 $bucket 是 OFS 桶，暂不支持图片极智压缩";
+            }
+
+            try {
+                $slimResult = $cosClient->getImageSlim(array(
+                    'Bucket' => $bucket,
+                ));
+                return $slimResult;
+            } catch (\Exception $e) {
+                if ($e->getExceptionCode() === 'UpsAppNotExist') {
+                    return "存储桶 $bucket 未绑定数据万象，若要开启极智压缩，请先 <a href=\"https://console.cloud.tencent.com/ci/bucket\" target=\"_blank\">绑定数据万象服务</a>";
+                } else if ($e->getExceptionCode() === 'RegionUnsupport') {
+                    return "存储桶所在地域 $region 暂不支持图片极智压缩";
+                } else {
+                    return "存储桶极智压缩配置获取失败";
+                }
+            }
+        } catch (\Exception $exception) {
+            return '';
         }
     }
 
@@ -131,65 +133,79 @@ class Plugin implements PluginInterface
      */
     public static function setImageSlim($config)
     {
-        $opt = Options::alloc()->plugin(pluginName);
-        $cosClient = self::CosInit($opt);
-
-        $bucket = $opt->bucket;
-        $region = $opt->region;
-
-        if (!$bucket) return '未设置存储桶';
-        if (!$region) return '未设置地域';
-
-        $toOpen = $config['image_slim_auto'] === 'on' || $config['image_slim_api'] === 'on';
-        if ($config['image_slim_tips']) return '';
-
         try {
-            $headResult = $cosClient->headBucket(array(
-                'Bucket' => $bucket,
-            ));
-        } catch (\Exception $e) {
-            if ($e->getExceptionCode() === 'NoSuchBucket') {
-                return "存储桶不存在，请检查存储桶和地域配置";
+            $opt = Options::alloc()->plugin(pluginName);
+            $cosClient = self::CosInit($opt);
+
+            $bucket = $opt->bucket;
+            $region = $opt->region;
+
+            if (!$bucket) return '未设置存储桶';
+            if (!$region) return '未设置地域';
+
+            unset($config['image_slim_tips']);
+
+            try {
+                $headResult = $cosClient->headBucket(array(
+                    'Bucket' => $bucket,
+                ));
+            } catch (\Exception $e) {
+                if ($e->getExceptionCode() === 'NoSuchBucket') {
+                    return "存储桶不存在，请检查存储桶和地域配置";
+                } else {
+                    return $e->getExceptionCode() . ', ' . $e->getMessage();
+                }
+            }
+
+            if (isset($headResult['BucketArch'])) {
+                return "存储桶 $bucket 是 OFS 桶，暂不支持图片极智压缩";
+            }
+
+            // 生成 SlimMode
+            $newSlimModeArr = array();
+            $autoMode = false;
+
+            if (in_array('on', $config['image_slim_auto'])) {
+                $autoMode = true;
+                $newSlimModeArr[] = 'Auto';
+            }
+
+            if (in_array('on', $config['image_slim_api'])) {
+                if ($autoMode) {
+                    return '「自动压缩模式」和「API调用模式」不能同时开启，请二选一）';
+                }
+                $newSlimModeArr[] = 'API';
+            }
+
+            $suffix = $config['image_slim_suffix'];
+            $newSlimMode = join(',', $newSlimModeArr);
+
+            if ($newSlimMode) {
+                if ($autoMode && !$suffix) {
+                    return '未选择图片格式（开启了自动极智压缩，必须选择图片格式）';
+                }
+                try {
+                    $cosClient->openImageSlim(array(
+                        'Bucket' => $bucket,
+                        'SlimMode' => $newSlimMode,
+                        'Suffixs' => array(
+                            'Suffix' => $suffix,
+                        ),
+                    ));
+                } catch (\Exception $e) {
+                    return $e->getExceptionCode() . ', ' . $e->getMessage();
+                }
             } else {
-                return $e->getExceptionCode() . ', ' . $e->getMessage();
+                try {
+                    $cosClient->closeImageSlim(array(
+                        'Bucket' => $bucket,
+                    ));
+                } catch (\Exception $e) {
+                    return $e->getExceptionCode() . ', ' . $e->getMessage();
+                }
             }
-        }
-
-        if (isset($headResult['BucketArch'])) {
-            return "存储桶 $bucket 是 OFS 桶，暂不支持图片极智压缩";
-        }
-
-        // 生成 SlimMode
-        $newSlimModeArr = array();
-        if ($config['image_slim_auto']) array_push($newSlimModeArr, 'Auto');
-        if ($config['image_slim_api']) array_push($newSlimModeArr, 'API');
-        $suffix = $config['image_slim_suffix'];
-        $newSlimMode = join(',', $newSlimModeArr);
-
-
-        if ($newSlimMode) {
-            if ($config['image_slim_auto'] && !$suffix) {
-                return '未选择图片格式（开启了自动极智压缩，必须选择图片格式）';
-            }
-            try {
-                $slimResult = $cosClient->openImageSlim(array(
-                    'Bucket' => $bucket,
-                    'SlimMode' => $newSlimMode,
-                    'Suffixs' => array(
-                        'Suffix' => $suffix,
-                    ),
-                ));
-            } catch (\Exception $e) {
-                return $msg = $e->getExceptionCode() . ', ' . $e->getMessage();
-            }
-        } else {
-            try {
-                $slimResult = $cosClient->closeImageSlim(array(
-                    'Bucket' => $bucket,
-                ));
-            } catch (\Exception $e) {
-                return $msg = $e->getExceptionCode() . ', ' . $e->getMessage();
-            }
+        } catch (\Exception $exception) {
+            return '';
         }
         return '';
     }
@@ -293,6 +309,14 @@ class Plugin implements PluginInterface
             );
             $domain->setAttribute('class', 'joe_content joe_advanced');
 
+            $cdn_domain = new Text(
+                'cdn_domain',
+                NULL,
+                '',
+                _t('访问域名，CDN域名，减少COS费用开支')
+            );
+            $cdn_domain->setAttribute('class', 'joe_content joe_advanced');
+
             $sign = new Select('sign', array(
                 'open' => _t('开启(建议)'),
                 'close' => _t('关闭'),
@@ -323,12 +347,11 @@ class Plugin implements PluginInterface
             $form->addInput($bucket);
             $form->addInput($path);
             $form->addInput($domain);
+            $form->addInput($cdn_domain);
             $form->addInput($sign);
             $form->addInput($remote_sync);
             $form->addInput($local);
             $form->addInput($local_sync);
-
-
 
             /** 极智压缩配置项 */
             $slimResult = self::getImageSlim();
@@ -352,20 +375,18 @@ class Plugin implements PluginInterface
 
             $slimMode = isset($slimResult['SlimMode']) ? $slimResult['SlimMode'] : '';
             $slimModeArr = $slimMode ? explode(',', $slimMode) : array();
-            $slimAutoOpened = in_array('Auto', $slimModeArr);
-            $slimApiOpened = in_array('API', $slimModeArr);
+            $slimAutoOpened = in_array('Auto', $slimModeArr) ? 'on' : 'off';
+            $slimApiOpened = in_array('API', $slimModeArr) ? 'on' : 'off';
             $image_slim_auto = new Checkbox(
                 'image_slim_auto',
                 array(
                     'on' => _t('开启自动压缩'),
                 ),
-                array(
-                    $slimAutoOpened ? 'on' : '',
-                ),
+                array($slimAutoOpened),
                 _t('自动压缩（推荐）'),
                 _t('无需添加任何额外的参数，在正常访问以下格式图片时将自动进行压缩。')
             );
-            $image_slim_auto->value($slimAutoOpened ? 'on' : '');
+            $image_slim_auto->value(array($slimAutoOpened));
             $image_slim_auto->setAttribute('class', 'joe_content joe_slim image_slim_auto ' . $slimClass);
 
             $slimSuffixArr = isset($slimResult['Suffixs']) && isset($slimResult['Suffixs']['Suffix']) ? $slimResult['Suffixs']['Suffix'] : array();
@@ -388,13 +409,11 @@ class Plugin implements PluginInterface
                 array(
                     'on' => _t('开启 API 调用'),
                 ),
-                array(
-                    $slimApiOpened ? 'on' : '',
-                ),
+                array($slimApiOpened),
                 _t('通过 API 调用'),
                 _t('访问图片时，在图片链接后添加极智压缩参数<span class="tea-text-warning"> imageSlim </span>，即可访问到压缩后的图片，具体请参考<a href="https://cloud.tencent.com/document/product/460/94856" target="_blank"> 图片极智压缩接口说明 </a>。')
             );
-            $image_slim_api->value($slimApiOpened ? 'on' : '');
+            $image_slim_api->value(array($slimApiOpened));
             $image_slim_api->setAttribute('class', 'joe_content joe_slim image_slim_api ' . $slimClass);
 
             $form->addInput($image_slim_auto);
@@ -413,9 +432,9 @@ class Plugin implements PluginInterface
                 window.onload = function() {
                     // 重置极智压缩的选项
                     var slimError = '<?=$slimError?>';
-                    var autoMode = <?=$slimAutoOpened?'true':'false'?>;
+                    var autoMode = <?=$slimAutoOpened === 'on'?>;
                     var suffix = <?=json_encode($slimSuffixArr)?>;
-                    var apiMode = <?=$slimApiOpened?'true':'false'?>;
+                    var apiMode = <?=$slimApiOpened === 'on'?>;
                     $('[name=image_slim_tips]').val(slimError);
                     $('#image_slim_auto-on').prop('checked', autoMode);
                     $('#image_slim_api-on').prop('checked', apiMode);
@@ -455,7 +474,7 @@ class Plugin implements PluginInterface
                 if (!$exist) {
                     throw new \Typecho\Plugin\Exception('存储桶不存在！请返回检查SecretId、SecretKey、存储桶等信息是否正确！');
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 throw new \Typecho\Plugin\Exception(_t($e->getMessage()));
             }
 
@@ -514,15 +533,15 @@ class Plugin implements PluginInterface
             }
 
             $cosClient->upload(
-                $bucket = $opt->bucket,
-                $key = $path,
-                $body = fopen($uploadfile, 'rb'),
-                $options = array(
+                $opt->bucket,
+                $path,
+                fopen($uploadfile, 'rb'),
+                array(
                     "ACL" => 'public-read',
                     'CacheControl' => 'private'
                 )
             );
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             echo "$e\n";
             return false;
         }
@@ -580,15 +599,15 @@ class Plugin implements PluginInterface
         $cosClient = self::CosInit();
         try {
             $cosClient->upload(
-                $bucket = $opt->bucket,
-                $key = $path,
-                $body = fopen($uploadfile, 'rb'),
-                $options = array(
+                $opt->bucket,
+                $path,
+                fopen($uploadfile, 'rb'),
+                array(
                     "ACL" => 'public-read',
                     'CacheControl' => 'private'
                 )
             );
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             echo "$e\n";
             return false;
         }
@@ -632,12 +651,12 @@ class Plugin implements PluginInterface
             #初始化COS
             $cosClient = self::CosInit();
             try {
-                $result = $cosClient->deleteObject(array(
+                $cosClient->deleteObject(array(
                     #bucket的命名规则为{name}-{appid} ，此处填写的存储桶名称必须为此格式
                     'Bucket' => $opt->bucket,
                     'Key' => $content['attachment']->path
                 ));
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 echo "$e\n";
                 return false;
             }
@@ -656,11 +675,14 @@ class Plugin implements PluginInterface
         $opt = Options::alloc()->plugin(pluginName);
         $cosClient = self::CosInit();
         if ($opt->sign == 'open') {
-            $url = $cosClient->getObjectUrl($opt->bucket, $content['attachment']->path, '+60 minutes');
-            return $url;
+            return $cosClient->getObjectUrl($opt->bucket, $content['attachment']->path, '+60 minutes');
         }
-        $url = $cosClient->getObjectUrlWithoutSign($opt->bucket, $content['attachment']->path);
-        return $url;
+
+        if (!empty($opt->cdn_domain)) {
+            return $opt->cdn_domain . $content['attachment']->path;
+        }
+
+        return $cosClient->getObjectUrlWithoutSign($opt->bucket, $content['attachment']->path);
     }
 
     /**
@@ -674,11 +696,9 @@ class Plugin implements PluginInterface
         $opt = Options::alloc()->plugin(pluginName);
         $cosClient = self::CosInit();
         if ($opt->sign == 'open') {
-            $url = $cosClient->getObjectUrl($opt->bucket, $content['attachment']->path, '+60 minutes');
-            return $url;
+            return $cosClient->getObjectUrl($opt->bucket, $content['attachment']->path, '+60 minutes');
         }
-        $url = $cosClient->getObjectUrlWithoutSign($opt->bucket, $content['attachment']->path);
-        return $url;
+        return $cosClient->getObjectUrlWithoutSign($opt->bucket, $content['attachment']->path);
     }
 
     /**
@@ -746,11 +766,11 @@ class Plugin implements PluginInterface
                 'domain' => $options->domain,
                 'schema' => 'http', #协议头部，默认为https
                 'credentials' => array(
-                        'secretId' => $options->secid,
-                        'secretKey' => $options->sekey
-                    ),
-                    'userAgent' => 'typecho/1.2.0;tencentcloud-typecho-plugin-cos/1.0.2;cos-php-sdk-v5/2.0.8'
-                ));
+                    'secretId' => $options->secid,
+                    'secretKey' => $options->sekey
+                ),
+                'userAgent' => 'typecho/1.2.0;tencentcloud-typecho-plugin-cos/1.0.2;cos-php-sdk-v5/2.0.8'
+            ));
         }
 
         return new \Qcloud\Cos\Client(array(
@@ -780,7 +800,7 @@ class Plugin implements PluginInterface
             if (!$result) {
                 return false;
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
         return true;
@@ -805,7 +825,7 @@ class Plugin implements PluginInterface
             if ($result) {
                 return true;
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return true;
         }
         return false;
